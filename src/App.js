@@ -1,14 +1,15 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import fire from './fire';
 import logo from './logo.svg';
-import './App.css';
+import './App.scss';
+import Authorization from './Authorization.js';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = { messages: [] }; // <- set up react state
   }
-  componentWillMount(){
+  componentWillMount() {
     /* Create reference to messages in Firebase Database */
     let messagesRef = fire.database().ref('messages').orderByKey().limitToLast(100);
     messagesRef.on('child_added', snapshot => {
@@ -17,7 +18,7 @@ class App extends Component {
       this.setState({ messages: [message].concat(this.state.messages) });
     })
   }
-  addMessage(e){
+  addMessage(e) {
     e.preventDefault(); // <- prevent form submit from reloading the page
     /* Send the message to Firebase */
     fire.database().ref('messages').push( this.inputEl.value );
@@ -25,15 +26,18 @@ class App extends Component {
   }
   render() {
     return (
-      <form onSubmit={this.addMessage.bind(this)}>
-        <input type="text" ref={ el => this.inputEl = el }/>
-        <input type="submit"/>
-        <ul>
-          { /* Render the list of messages */
-            this.state.messages.map( message => <li key={message.id}>{message.text}</li> )
-          }
-        </ul>
-      </form>
+      <div>
+        <Authorization />
+        <div className="content">
+          <form onSubmit={this.addMessage.bind(this)}>
+            <input type="text" ref={ el => this.inputEl = el }/>
+            <input type="submit"/>
+            <ul>
+              {this.state.messages.map( message => <li key={message.id}><p>{message.text}</p></li> )}
+            </ul>
+          </form>
+          </div>
+      </div>
     );
   }
 }
