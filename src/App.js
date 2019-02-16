@@ -1,44 +1,69 @@
 import React, {Component} from 'react';
-import fire from './fire';
-import logo from './logo.svg';
+import fire, {auth, googleProvider, facebookProvider, twitterProvider} from './fire';
 import './App.scss';
-import Authorization from './Authorization.js';
+import { Switch, Route, Link } from 'react-router-dom';
+import Header from './Header'
+import Main from './Main'
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { messages: [] }; // <- set up react state
+  constructor() {
+    super();
+    this.state = {
+      currentItem: '',
+      username: '',
+      items: [],
+      user: null
+    }
+    this.login = this.login.bind(this);
+    this.logout = this.logout.bind(this);
   }
-  componentWillMount() {
-    /* Create reference to messages in Firebase Database */
-    let messagesRef = fire.database().ref('messages').orderByKey().limitToLast(100);
-    messagesRef.on('child_added', snapshot => {
-      /* Update React state when message is added at Firebase Database */
-      let message = { text: snapshot.val(), id: snapshot.key };
-      this.setState({ messages: [message].concat(this.state.messages) });
-    })
+  componentDidMount() {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        this.setState({user});
+      }
+    });
   }
-  addMessage(e) {
-    e.preventDefault(); // <- prevent form submit from reloading the page
-    /* Send the message to Firebase */
-    fire.database().ref('messages').push( this.inputEl.value );
-    this.inputEl.value = ''; // <- clear the input
+  logout() {
+    auth.signOut()
+    .then(() => {
+      this.setState({
+        user: null
+      });
+    });
+  }
+  login() {
+    auth.signInWithPopup(googleProvider)
+    .then((result) => {
+      const user = result.user;
+      this.setState({
+        user
+      });
+    });
   }
   render() {
     return (
       <div>
-        <Authorization />
-        <div className="content">
-          <form onSubmit={this.addMessage.bind(this)}>
-            <input type="text" ref={ el => this.inputEl = el }/>
-            <input type="submit"/>
-            <ul>
-              {this.state.messages.map( message => <li key={message.id}><p>{message.text}</p></li> )}
-            </ul>
-          </form>
+        <div className="authorization">
+          <div className="header">
+            <h1>Treelection</h1>
+            {this.state.user ?
+              <div>
+                <button onClick={this.logout}>Log Out</button>
+                <div className="name">{this.state.user.displayName}</div>
+              </div>
+              :
+              <button onClick={this.login}>Log In</button>
+            }
           </div>
+        </div>
+        {this.state.user ?
+          <Main />
+          :
+          <h2>Not logged in</h2>
+        }
       </div>
-    );
+    )
   }
 }
 

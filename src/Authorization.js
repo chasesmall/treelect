@@ -1,8 +1,10 @@
 import React, {Component} from 'react';
 import fire, {auth, googleProvider, facebookProvider, twitterProvider} from './fire';
 import './App.scss';
+import App from './App.js';
+import { connect } from 'react-redux';
 
-class Authorization extends Component {
+class App extends Component {
   constructor() {
     super();
     this.state = {
@@ -14,21 +16,24 @@ class Authorization extends Component {
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
   }
+  componentDidMount() {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        this.setState({user});
+      }
+    });
+  }
   logout() {
     auth.signOut()
     .then(() => {
-      this.setState({
-        user: null
-      });
+      this.props.dispatch({ type: 'LOGOUT' });
     });
   }
   login() {
     auth.signInWithPopup(googleProvider)
     .then((result) => {
-      const user = result.user;
-      this.setState({
-        user
-      });
+      //const user = result.user;
+      this.props.dispatch({ type: 'LOGIN' });
     });
   }
   render() {
@@ -36,7 +41,7 @@ class Authorization extends Component {
       <div className="authorization">
         <div className="header">
           <h1>Treelection</h1>
-          {this.state.user ?
+          {this.props.user ?
             <button onClick={this.logout}>Log Out</button>
             :
             <button onClick={this.login}>Log In</button>
@@ -47,4 +52,10 @@ class Authorization extends Component {
   }
 }
 
-export default Authorization;
+function mapStateToProps(state) {
+  return {
+    user: state.user
+  }
+}
+
+export default connect(mapStateToProps)(Authorization);
